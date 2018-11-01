@@ -1,3 +1,3 @@
 # Overview
 
-Learning the Azure container instances API on Azure
+Playing with Azure ACI
