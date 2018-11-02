@@ -1,11 +1,19 @@
 package helpers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/Azure/go-autorest/autorest"
+)
+
+var (
+	ctx = context.Background()
 )
 
 // CheckEnv Check the Azure creds are set in the environment variables
@@ -35,6 +43,7 @@ func FatalError(err error) {
 	}
 }
 
+//PrintError Prints if error
 func PrintError(err error) {
 	if err != nil {
 		log.Printf(err.Error())
@@ -50,4 +59,47 @@ func ReadJSON(path string) (*map[string]interface{}, error) {
 	contents := make(map[string]interface{})
 	json.Unmarshal(data, &contents)
 	return &contents, nil
+}
+
+// DeployArmTemplate Deploys and ARM template
+func DeployArmTemplate(sid string, authorizer autorest.Authorizer, groupName string, location string, template *map[string]interface{}, paramaters *map[string]interface{}) (deployment resources.DeploymentExtended, err error) {
+	// Setup ARM Client
+	armClient := resources.NewGroupsClient(sid)
+	armClient.Authorizer = authorizer
+
+	// Create ARM group
+	params := resources.Group{
+		Location: &location,
+	}
+	group, _ := armClient.CreateOrUpdate(ctx, groupName, params)
+	log.Printf("%v arm group created", group.Name)
+
+	// Create deployment client
+	dClient := resources.NewDeploymentsClient(sid)
+	dClient.Authorizer = authorizer
+
+	// Deploy ARM template deployment
+	deploymentFuture, err := dClient.CreateOrUpdate(
+		ctx,
+		groupName,
+		"ACIDeployment",
+		resources.Deployment{
+			Properties: &resources.DeploymentProperties{
+				Template:   template,
+				Parameters: paramaters,
+				Mode:       resources.Incremental,
+			},
+		},
+	)
+
+	PrintError(err)
+
+	// Wait for completion
+	log.Printf("Wait for completion...")
+	err = deploymentFuture.Future.WaitForCompletion(ctx, dClient.BaseClient.Client)
+	if err != nil {
+		return
+	}
+	log.Printf("Deployment completed...")
+	return deploymentFuture.Result(dClient)
 }
