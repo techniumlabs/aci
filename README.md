@@ -21,6 +21,8 @@ export AZURE_SUBSCRIPTION_ID=<blah>
 
 ## Testing the App
 
+The app deploys an ACI app and then routes traffic to the ACI app once ready. App runs on `http://localhost:8080`
+
 - dot source your creds:
 
 ```
@@ -32,3 +34,4 @@ source ~/.mycreds
 ```
 go run main.go
 ```
+

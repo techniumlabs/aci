@@ -2,31 +2,57 @@ package main
 
 import (
 	"log"
-	"os"
+	"net/http"
 
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	helpers "github.com/writeameer/aci/helpers"
+	handlers "github.com/writeameer/httphandlers/handlers"
 )
 
 func main() {
 
-	// Check env for creds and read env
-	helpers.FatalError(helpers.CheckEnv())
-	sid := os.Getenv("AZURE_SUBSCRIPTION_ID")
+	// Deploy App
+	siteFQDN, err := deployACIApp()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Authenticate with Azure
-	authorizer, err := auth.NewAuthorizerFromEnvironment()
-	helpers.FatalError(err)
+	log.Println(siteFQDN)
 
+	// Create new router
+	mux := http.NewServeMux()
+	originHost := siteFQDN
+
+	mux.Handle("/", handlers.ReverseProxyHandler(originHost))
+
+	// Listen and Serve
+	port := ":8080"
+	log.Println("Server started on port" + port)
+	log.Fatal(http.ListenAndServe(port, mux))
+
+}
+
+func deployACIApp() (siteFQDN string, err error) {
 	// Get ARM template and params
-	template, err := helpers.ReadJSON("./template/azuredeploy.json")
-	helpers.FatalError(err)
-
+	template, _ := helpers.ReadJSON("./template/azuredeploy.json")
 	templateParameters, _ := helpers.ReadJSON("./template/azuredeploy.parameters.json")
-	helpers.FatalError(err)
 
 	// Deploy ARM Template
 	log.Printf("Starting deployment...")
-	helpers.DeployArmTemplate(sid, authorizer, "hiberapp", "Australia East", template, templateParameters)
 
+	groupName := "hiberapp"
+	location := "Australia East"
+	deploymentName := "ACIDeployment"
+
+	// Get Deployment result
+	result, err := helpers.DeployArmTemplate(groupName, location, deploymentName, template, templateParameters)
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
+
+	// Parse Output
+	properties := result.Properties.Outputs.(map[string]interface{})
+	propInfo := properties["siteFQDN"].(map[string]interface{})
+	siteFQDN = propInfo["value"].(string)
+
+	return
 }

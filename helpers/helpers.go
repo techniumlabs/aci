@@ -8,8 +8,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/go-autorest/autorest"
+
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
 var (
@@ -62,7 +64,11 @@ func ReadJSON(path string) (*map[string]interface{}, error) {
 }
 
 // DeployArmTemplate Deploys and ARM template
-func DeployArmTemplate(sid string, authorizer autorest.Authorizer, groupName string, location string, template *map[string]interface{}, paramaters *map[string]interface{}) (deployment resources.DeploymentExtended, err error) {
+func DeployArmTemplate(groupName string, location string, deploymentName string, template *map[string]interface{}, paramaters *map[string]interface{}) (deployment resources.DeploymentExtended, err error) {
+
+	// Authenticate with Azure
+	authorizer, sid := AzureAuth()
+
 	// Setup ARM Client
 	armClient := resources.NewGroupsClient(sid)
 	armClient.Authorizer = authorizer
@@ -72,7 +78,7 @@ func DeployArmTemplate(sid string, authorizer autorest.Authorizer, groupName str
 		Location: &location,
 	}
 	group, _ := armClient.CreateOrUpdate(ctx, groupName, params)
-	log.Printf("%v arm group created", group.Name)
+	log.Printf("%v arm group created", *group.Name)
 
 	// Create deployment client
 	dClient := resources.NewDeploymentsClient(sid)
@@ -82,7 +88,7 @@ func DeployArmTemplate(sid string, authorizer autorest.Authorizer, groupName str
 	deploymentFuture, err := dClient.CreateOrUpdate(
 		ctx,
 		groupName,
-		"ACIDeployment",
+		deploymentName,
 		resources.Deployment{
 			Properties: &resources.DeploymentProperties{
 				Template:   template,
@@ -102,4 +108,17 @@ func DeployArmTemplate(sid string, authorizer autorest.Authorizer, groupName str
 	}
 	log.Printf("Deployment completed...")
 	return deploymentFuture.Result(dClient)
+}
+
+// AzureAuth Checks creds are provided in the ENV and returns an Azure token and Subscription ID
+func AzureAuth() (authorizer autorest.Authorizer, sid string) {
+	// Check env for creds and read env
+	FatalError(CheckEnv())
+	sid = os.Getenv("AZURE_SUBSCRIPTION_ID")
+
+	// Authenticate with Azure
+	authorizer, err := auth.NewAuthorizerFromEnvironment()
+	FatalError(err)
+
+	return
 }
