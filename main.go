@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -11,6 +10,10 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/writeameer/aci/helpers"
+)
+
+var (
+	ctx = context.Background()
 )
 
 func main() {
@@ -30,7 +33,7 @@ func main() {
 
 }
 
-func deployArmTemplate(sid string, authorizer autorest.Authorizer, groupName string, location string) (err error) {
+func deployArmTemplate(sid string, authorizer autorest.Authorizer, groupName string, location string) (deployment resources.DeploymentExtended, err error) {
 	// Setup ARM Client
 	armClient := resources.NewGroupsClient(sid)
 	armClient.Authorizer = authorizer
@@ -39,28 +42,38 @@ func deployArmTemplate(sid string, authorizer autorest.Authorizer, groupName str
 	params := resources.Group{
 		Location: &location,
 	}
-	group, _ := armClient.CreateOrUpdate(context.Background(), groupName, params)
+	group, _ := armClient.CreateOrUpdate(ctx, groupName, params)
 	log.Printf("%v arm group created", group)
 
 	// Create deployment client
 	dClient := resources.NewDeploymentsClient(sid)
 	dClient.Authorizer = authorizer
 
-	template, _ := ioutil.ReadFile("./template/azuredeploy.json")
-	templateParameters, _ := ioutil.ReadFile("./azuredeploy.parameters.json")
+	template, err := helpers.ReadJSON("./template/azuredeploy.json")
+	helpers.FatalError(err)
 
-	// Define ARM deployment template and params
-	deployment := resources.Deployment{
-		Properties: &resources.DeploymentProperties{
-			Template:   string(template),
-			Parameters: templateParameters,
-			Mode:       resources.Incremental,
+	templateParameters, _ := helpers.ReadJSON("./template/azuredeploy.parameters.json")
+	helpers.FatalError(err)
+
+	// Deploy ARM template deployment
+	deploymentFuture, err := dClient.CreateOrUpdate(
+		ctx,
+		groupName,
+		"ACIDeployment",
+		resources.Deployment{
+			Properties: &resources.DeploymentProperties{
+				Template:   template,
+				Parameters: templateParameters,
+				Mode:       resources.Incremental,
+			},
 		},
-	}
-
-	// Create ARM template deployment
-	_, err = dClient.CreateOrUpdate(context.Background(), groupName, "ACIDeployment", deployment)
+	)
 	helpers.PrintError(err)
 
-	return err
+	// Wait for completion
+	err = deploymentFuture.Future.WaitForCompletion(ctx, dClient.BaseClient.Client)
+	if err != nil {
+		return
+	}
+	return deploymentFuture.Result(dClient)
 }

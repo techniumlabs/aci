@@ -1,7 +1,9 @@
 package helpers
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -37,4 +39,15 @@ func PrintError(err error) {
 	if err != nil {
 		log.Printf(err.Error())
 	}
+}
+
+// ReadJSON Reads json and returns a map
+func ReadJSON(path string) (*map[string]interface{}, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalf("failed to read file: %v", err)
+	}
+	contents := make(map[string]interface{})
+	json.Unmarshal(data, &contents)
+	return &contents, nil
 }
