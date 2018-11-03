@@ -32,6 +32,8 @@ func CheckEnv() (err error) {
 		if os.Getenv(cred) == "" {
 			log.Printf("credential variable " + cred + " has not be set")
 			err = errors.New("error, missing envrionment variables. run `az ad sp create-for-rbac -n \"<yourAppName>\"' to create a service principal and generate the necessary credential variables")
+		} else {
+			log.Printf("%v variable was found. OK.", cred)
 		}
 	}
 
@@ -68,7 +70,6 @@ func DeployArmTemplate(groupName string, location string, deploymentName string,
 
 	// Authenticate with Azure
 	authorizer, sid := AzureAuth()
-
 	// Setup ARM Client
 	armClient := resources.NewGroupsClient(sid)
 	armClient.Authorizer = authorizer
@@ -77,7 +78,8 @@ func DeployArmTemplate(groupName string, location string, deploymentName string,
 	params := resources.Group{
 		Location: &location,
 	}
-	group, _ := armClient.CreateOrUpdate(ctx, groupName, params)
+	group, err := armClient.CreateOrUpdate(ctx, groupName, params)
+	PrintError(err)
 	log.Printf("%v arm group created", *group.Name)
 
 	// Create deployment client
@@ -117,8 +119,10 @@ func AzureAuth() (authorizer autorest.Authorizer, sid string) {
 	sid = os.Getenv("AZURE_SUBSCRIPTION_ID")
 
 	// Authenticate with Azure
+	log.Println("Starting azure auth...")
 	authorizer, err := auth.NewAuthorizerFromEnvironment()
 	FatalError(err)
+	log.Println("After azure auth...")
 
 	return
 }

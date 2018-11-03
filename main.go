@@ -33,8 +33,10 @@ func main() {
 
 func deployACIApp() (siteFQDN string, err error) {
 	// Get ARM template and params
-	template, _ := helpers.ReadJSON("./template/azuredeploy.json")
+	template, err := helpers.ReadJSON("./template/azuredeploy.json")
+	helpers.PrintError(err)
 	templateParameters, _ := helpers.ReadJSON("./template/azuredeploy.parameters.json")
+	helpers.PrintError(err)
 
 	// Deploy ARM Template
 	log.Printf("Starting deployment...")
