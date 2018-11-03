@@ -7,7 +7,7 @@ Playing with Azure ACI.
 Run the following command to create an AZure Service Principle for this app:
 
 ```
-az ad sp create-for-rbac -n \"<yourAppName>\"
+az ad sp create-for-rbac -n "<your app name>" -o json --sdk-auth
 ```
 
 And use the output to generate a credential file `~/.mycreds`:
