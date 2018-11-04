@@ -126,3 +126,12 @@ func AzureAuth() (authorizer autorest.Authorizer, sid string) {
 
 	return
 }
+
+// ArmDeploymentRequest is a struct containing paths to the ARM template and parameter files that need to be deployed.
+type ArmDeploymentRequest struct {
+	Template       string
+	Parameters     string
+	GroupName      string
+	Location       string
+	DeploymentName string
+}

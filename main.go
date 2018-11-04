@@ -10,12 +10,18 @@ import (
 
 func main() {
 
-	// Deploy App
-	siteFQDN, err := deployACIApp()
+	// Deploy ACI and get siteFQDN
+	siteFQDN, err := deployACIApp(helpers.ArmDeploymentRequest{
+		Template:       "./templates/example/azuredeploy.json",
+		Parameters:     "./templates/example/azuredeploy.parameters.json",
+		GroupName:      "hiberapp",
+		Location:       "Australia East",
+		DeploymentName: "deploymentName",
+	})
+
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	log.Println(siteFQDN)
 
 	// Create new router
@@ -31,19 +37,19 @@ func main() {
 
 }
 
-func deployACIApp() (siteFQDN string, err error) {
+func deployACIApp(request helpers.ArmDeploymentRequest) (siteFQDN string, err error) {
 	// Get ARM template and params
-	template, err := helpers.ReadJSON("./template/azuredeploy.json")
+	template, err := helpers.ReadJSON(request.Template)
 	helpers.PrintError(err)
-	templateParameters, _ := helpers.ReadJSON("./template/azuredeploy.parameters.json")
+	templateParameters, _ := helpers.ReadJSON(request.Parameters)
 	helpers.PrintError(err)
 
 	// Deploy ARM Template
 	log.Printf("Starting deployment...")
 
-	groupName := "hiberapp"
-	location := "Australia East"
-	deploymentName := "ACIDeployment"
+	groupName := request.GroupName
+	location := request.Location
+	deploymentName := request.DeploymentName
 
 	// Get Deployment result
 	result, err := helpers.DeployArmTemplate(groupName, location, deploymentName, template, templateParameters)
