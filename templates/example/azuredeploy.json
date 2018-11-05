@@ -216,19 +216,19 @@
           "volumes": [
             {
               "azureFile": {
-                "shareName": "[variables('wordpressShareName')]",
-                "storageAccountKey": "[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]",
-                "storageAccountName": "[parameters('storageAccountName')]"
-              },
-              "name": "wordpressfile"
-            },
-            {
-              "azureFile": {
                 "shareName": "[variables('mysqlShareName')]",
                 "storageAccountKey": "[listKeys(parameters('storageAccountName'),'2017-10-01').keys[0].value]",
                 "storageAccountName": "[parameters('storageAccountName')]"
               },
               "name": "mysqlfile"
+            },            
+            {
+              "azureFile": {
+                "shareName": "[variables('wordpressShareName')]",
+                "storageAccountKey": "[listKeys(parameters('storageAccountName'),'2017-10-01').keys[1].value]",
+                "storageAccountName": "[parameters('storageAccountName')]"
+              },
+              "name": "wordpressfile"
             }
           ],
           "ipAddress": {

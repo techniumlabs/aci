@@ -9,7 +9,8 @@ ACTION=""
 # Functions
 #------------------------------------------------------------------------
 
-function create () {
+function create () 
+{
   echo "Running create action:"
   az group create --name "$resourceGroup" --location "$location"
   az group deployment create \
@@ -19,16 +20,16 @@ function create () {
     --parameters "$parameterfile"
 }
 
-function delete() {
+function delete() 
+{
   echo "Running delete action:"
   az group deployment delete \
     --name "$appName" \
     --resource-group "$resourceGroup"
 }
 
-function checkargs(){
-  echo "Checking args..."
-
+function checkargs()
+{
   ACTION="$1"
   if [ -z "$ACTION" ]; 
   then
@@ -41,8 +42,6 @@ function checkargs(){
     echo "Action has to be 'create' or 'delete'"
     exit 1
   fi
-
-  echo "args OK"
 }
 #------------------------------------------------------------------------
 # MAIN
@@ -52,8 +51,8 @@ function checkargs(){
 checkargs $*
 
 # Init vars
-templatefile="example/azuredeploy.json"
-parameterfile="example/azuredeploy.parameters.json"
+templatefile="101-aci-linuxcontainer-public-ip/azuredeploy.json"
+parameterfile="101-aci-linuxcontainer-public-ip/azuredeploy.parameters.json"
 resourceGroup="hiberapp"
 appName="hiberapp"
 location="australiaeast"
