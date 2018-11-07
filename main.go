@@ -12,11 +12,11 @@ func main() {
 
 	// Deploy ACI and get siteFQDN
 	siteFQDN, err := deployACIApp(helpers.ArmDeploymentRequest{
-		Template:       "./templates/example/azuredeploy.json",
-		Parameters:     "./templates/example/azuredeploy.parameters.json",
-		GroupName:      "hiberapp",
-		Location:       "Australia East",
-		DeploymentName: "deploymentName",
+		Template:       "./templates/example/wordpress/azuredeploy.json",
+		Parameters:     "./templates/example/wordpress/azuredeploy.parameters.json",
+		GroupName:      "hiberapp-we",
+		Location:       "West Europe",
+		DeploymentName: "hiberapp",
 	})
 
 	if err != nil {
