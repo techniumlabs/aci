@@ -138,16 +138,11 @@ type ArmDeploymentRequest struct {
 	DeploymentName string
 }
 
+// DeployContainer Deploys a container to ACI
 func DeployContainer(resourceGroupName string, containerGroupName string, containerName string) (err error) {
 
 	// Define container ports
-	var port int32 = 80
-	ports := []containerinstance.ContainerPort{
-		containerinstance.ContainerPort{
-			Port:     &port,
-			Protocol: containerinstance.ContainerNetworkProtocolTCP,
-		},
-	}
+	ports := setTCPPort([]int32{80})
 
 	// Define container properties
 	image := containerName
@@ -155,7 +150,7 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 	memoryInGB := 0.5
 	containerProperties := &containerinstance.ContainerProperties{
 		Image: &image,
-		Ports: &ports,
+		Ports: setTCPPort([]int32{80}),
 		Resources: &containerinstance.ResourceRequirements{
 			Requests: &containerinstance.ResourceRequests{
 				CPU:        &cpuCores,
@@ -173,9 +168,10 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 		},
 	}
 
-	// Define container group
+	// Define container ports
 	containerLocation := "East US"
 	dnsLabel := "hiberapp"
+	var port int32 = 80
 	containerPorts := []containerinstance.Port{
 		containerinstance.Port{
 			Port:     &port,
@@ -226,7 +222,7 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 
 	deployedGroup, err := deploymentFuture.Result(client)
 
-	log.Println(deployedGroup)
+	log.Println(*deployedGroup.IPAddress.Fqdn)
 
 	return
 }
