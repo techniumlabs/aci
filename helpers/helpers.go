@@ -11,6 +11,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
@@ -31,7 +32,7 @@ func CheckEnv() (err error) {
 	for _, cred := range azureCreds {
 		if os.Getenv(cred) == "" {
 			log.Printf("credential variable " + cred + " has not be set")
-			err = errors.New("error, missing envrionment variables. run `az ad sp create-for-rbac -n \"<yourAppName>\"' to create a service principal and generate the necessary credential variables")
+			err = errors.New("error, missing envrionment variables. run `az ad sp create-for-rbac -n \"<yourAppName>\"' -o json --sdk-auth to create a service principal and generate the necessary credential variables")
 		} else {
 			log.Printf("%v variable was found. OK.", cred)
 		}
@@ -70,6 +71,7 @@ func DeployArmTemplate(groupName string, location string, deploymentName string,
 
 	// Authenticate with Azure
 	authorizer, sid := AzureAuth()
+
 	// Setup ARM Client
 	armClient := resources.NewGroupsClient(sid)
 	armClient.Authorizer = authorizer
@@ -134,4 +136,87 @@ type ArmDeploymentRequest struct {
 	GroupName      string
 	Location       string
 	DeploymentName string
+}
+
+func DeployContainer(resourceGroupName string, containerGroupName string, containerName string) (err error) {
+
+	// Define container ports
+	var port int32 = 80
+	ports := []containerinstance.ContainerPort{
+		containerinstance.ContainerPort{
+			Port:     &port,
+			Protocol: containerinstance.ContainerNetworkProtocolTCP,
+		},
+	}
+
+	// Define container properties
+	image := containerName
+	cpuCores := 0.5
+	memoryInGB := 0.5
+	containerProperties := &containerinstance.ContainerProperties{
+		Image: &image,
+		Ports: &ports,
+		Resources: &containerinstance.ResourceRequirements{
+			Requests: &containerinstance.ResourceRequests{
+				CPU:        &cpuCores,
+				MemoryInGB: &memoryInGB,
+			},
+		},
+	}
+
+	// Define list of containers
+	instanceName := "my-instance-name"
+	containers := []containerinstance.Container{
+		containerinstance.Container{
+			ContainerProperties: containerProperties,
+			Name:                &instanceName,
+		},
+	}
+
+	// Define container group
+	containerLocation := "East US"
+	dnsLabel := "hiberapp"
+	cgroup := containerinstance.ContainerGroup{
+		ContainerGroupProperties: &containerinstance.ContainerGroupProperties{
+			Containers:    &containers,
+			OsType:        containerinstance.Linux,
+			RestartPolicy: containerinstance.OnFailure,
+			IPAddress: &containerinstance.IPAddress{
+				Type:         containerinstance.Public,
+				DNSNameLabel: &dnsLabel,
+			},
+		},
+		Location: &containerLocation,
+		Name:     &containerGroupName,
+	}
+
+	// Authenticate with Azure
+	authorizer, sid := AzureAuth()
+
+	log.Println("after authiorise")
+
+	// Get container service client and create container group
+	client := containerinstance.NewContainerGroupsClient(sid)
+	client.Authorizer = authorizer
+
+	log.Println("before deploy")
+
+	deploymentFuture, err := client.CreateOrUpdate(ctx, resourceGroupName, containerGroupName, cgroup)
+
+	log.Println("after deploy")
+
+	err = deploymentFuture.Future.WaitForCompletion(ctx, client.BaseClient.Client)
+	log.Println("after deploy wait")
+
+	if err != nil {
+		return
+	}
+
+	log.Printf("Deployment completed...")
+
+	deployedGroup, err := deploymentFuture.Result(client)
+
+	log.Println(deployedGroup)
+
+	return
 }

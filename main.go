@@ -2,38 +2,16 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	helpers "github.com/writeameer/aci/helpers"
-	handlers "github.com/writeameer/httphandlers/handlers"
 )
 
 func main() {
 
-	// Deploy ACI and get siteFQDN
-	siteFQDN, err := deployACIApp(helpers.ArmDeploymentRequest{
-		Template:       "./templates/example/wordpress/azuredeploy.json",
-		Parameters:     "./templates/example/wordpress/azuredeploy.parameters.json",
-		GroupName:      "hiberapp-we",
-		Location:       "West Europe",
-		DeploymentName: "hiberapp",
-	})
-
+	err := helpers.DeployContainer("aci-example", "helloworld", "microsoft/aci-helloworld")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf(err.Error())
 	}
-	log.Println(siteFQDN)
-
-	// Create new router
-	mux := http.NewServeMux()
-	originHost := siteFQDN
-
-	mux.Handle("/", handlers.ReverseProxyHandler(originHost))
-
-	// Listen and Serve
-	port := ":8080"
-	log.Println("Server started on port" + port)
-	log.Fatal(http.ListenAndServe(port, mux))
 
 }
 
@@ -63,4 +41,31 @@ func deployACIApp(request helpers.ArmDeploymentRequest) (siteFQDN string, err er
 	siteFQDN = propInfo["value"].(string)
 
 	return
+}
+
+func blah() {
+	// // Deploy ACI and get siteFQDN
+	// siteFQDN, err := deployACIApp(helpers.ArmDeploymentRequest{
+	// 	Template:       "./templates/example/wordpress/azuredeploy.json",
+	// 	Parameters:     "./templates/example/wordpress/azuredeploy.parameters.json",
+	// 	GroupName:      "hiberapp-we",
+	// 	Location:       "West Europe",
+	// 	DeploymentName: "hiberapp",
+	// })
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println(siteFQDN)
+
+	// // Create new router
+	// mux := http.NewServeMux()
+	// originHost := siteFQDN
+
+	// mux.Handle("/", handlers.ReverseProxyHandler(originHost))
+
+	// // Listen and Serve
+	// port := ":8080"
+	// log.Println("Server started on port" + port)
+	// log.Fatal(http.ListenAndServe(port, mux))
 }
