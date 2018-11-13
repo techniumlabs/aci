@@ -176,6 +176,13 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 	// Define container group
 	containerLocation := "East US"
 	dnsLabel := "hiberapp"
+	containerPorts := []containerinstance.Port{
+		containerinstance.Port{
+			Port:     &port,
+			Protocol: "tcp",
+		},
+	}
+
 	cgroup := containerinstance.ContainerGroup{
 		ContainerGroupProperties: &containerinstance.ContainerGroupProperties{
 			Containers:    &containers,
@@ -184,6 +191,7 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 			IPAddress: &containerinstance.IPAddress{
 				Type:         containerinstance.Public,
 				DNSNameLabel: &dnsLabel,
+				Ports:        &containerPorts,
 			},
 		},
 		Location: &containerLocation,
@@ -202,14 +210,16 @@ func DeployContainer(resourceGroupName string, containerGroupName string, contai
 	log.Println("before deploy")
 
 	deploymentFuture, err := client.CreateOrUpdate(ctx, resourceGroupName, containerGroupName, cgroup)
-
+	if err != nil {
+		log.Printf(err.Error())
+	}
 	log.Println("after deploy")
 
 	err = deploymentFuture.Future.WaitForCompletion(ctx, client.BaseClient.Client)
 	log.Println("after deploy wait")
 
 	if err != nil {
-		return
+		log.Printf(err.Error())
 	}
 
 	log.Printf("Deployment completed...")
