@@ -3,69 +3,46 @@ package main
 import (
 	"log"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	helpers "github.com/writeameer/aci/helpers"
 )
 
 func main() {
 
-	err := helpers.DeployContainer("aci-example", "helloworld", "microsoft/aci-helloworld")
+	// Define containers to run
+	containerSpecs := []helpers.ContainerSpec{
+		helpers.ContainerSpec{
+			ContainerName:  "wordpress",
+			ContainerImage: "wordpress",
+			Ports:          []int32{80},
+			Cpu:            0.5,
+			MemoryInGB:     0.5,
+		},
+		helpers.ContainerSpec{
+			ContainerName:  "mysql",
+			ContainerImage: "mysql",
+			Ports:          []int32{3306},
+			Cpu:            0.5,
+			MemoryInGB:     0.5,
+			EnvironmentVariables: map[string]string{
+				"MYSQL_ROOT_PASSWORD": "0rsmP@ssw0rd",
+			},
+		},
+	}
+
+	// Define the container group's specifications
+	containerGroupSpecs := helpers.ContainerGroupSpec{
+		ResourceGroupName: "aci-example",
+		Name:              "wordpress",
+		Ports:             []int32{80},
+		DNSNameLabel:      "hiberapp",
+		OsType:            containerinstance.Linux,
+		IPAddressType:     containerinstance.Public,
+	}
+
+	err := helpers.DeployContainer2("East US", "aci-example", "wordpress-app", containerSpecs, containerGroupSpecs)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 
-}
-
-func deployACIApp(request helpers.ArmDeploymentRequest) (siteFQDN string, err error) {
-	// Get ARM template and params
-	template, err := helpers.ReadJSON(request.Template)
-	helpers.PrintError(err)
-	templateParameters, _ := helpers.ReadJSON(request.Parameters)
-	helpers.PrintError(err)
-
-	// Deploy ARM Template
-	log.Printf("Starting deployment...")
-
-	groupName := request.GroupName
-	location := request.Location
-	deploymentName := request.DeploymentName
-
-	// Get Deployment result
-	result, err := helpers.DeployArmTemplate(groupName, location, deploymentName, template, templateParameters)
-	if err != nil {
-		log.Printf("Error %v", err)
-	}
-
-	// Parse Output
-	properties := result.Properties.Outputs.(map[string]interface{})
-	propInfo := properties["siteFQDN"].(map[string]interface{})
-	siteFQDN = propInfo["value"].(string)
-
-	return
-}
-
-func blah() {
-	// // Deploy ACI and get siteFQDN
-	// siteFQDN, err := deployACIApp(helpers.ArmDeploymentRequest{
-	// 	Template:       "./templates/example/wordpress/azuredeploy.json",
-	// 	Parameters:     "./templates/example/wordpress/azuredeploy.parameters.json",
-	// 	GroupName:      "hiberapp-we",
-	// 	Location:       "West Europe",
-	// 	DeploymentName: "hiberapp",
-	// })
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Println(siteFQDN)
-
-	// // Create new router
-	// mux := http.NewServeMux()
-	// originHost := siteFQDN
-
-	// mux.Handle("/", handlers.ReverseProxyHandler(originHost))
-
-	// // Listen and Serve
-	// port := ":8080"
-	// log.Println("Server started on port" + port)
-	// log.Fatal(http.ListenAndServe(port, mux))
 }
