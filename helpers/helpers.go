@@ -138,94 +138,8 @@ type ArmDeploymentRequest struct {
 	DeploymentName string
 }
 
-// DeployContainer Deploys a container to ACI
-func DeployContainer(resourceGroupName string, containerGroupName string, containerName string) (err error) {
-
-	// Define container properties
-	image := containerName
-	cpuCores := 0.5
-	memoryInGB := 0.5
-	containerProperties := &containerinstance.ContainerProperties{
-		Image: &image,
-		Ports: setTCPPort([]int32{80}),
-		Resources: &containerinstance.ResourceRequirements{
-			Requests: &containerinstance.ResourceRequests{
-				CPU:        &cpuCores,
-				MemoryInGB: &memoryInGB,
-			},
-		},
-	}
-
-	// Define list of containers
-	instanceName := "my-instance-name"
-	containers := []containerinstance.Container{
-		containerinstance.Container{
-			ContainerProperties: containerProperties,
-			Name:                &instanceName,
-		},
-	}
-
-	// Define container ports
-	containerLocation := "East US"
-	dnsLabel := "hiberapp"
-	var port int32 = 80
-	containerPorts := []containerinstance.Port{
-		containerinstance.Port{
-			Port:     &port,
-			Protocol: "tcp",
-		},
-	}
-
-	cgroup := containerinstance.ContainerGroup{
-		ContainerGroupProperties: &containerinstance.ContainerGroupProperties{
-			Containers:    &containers,
-			OsType:        containerinstance.Linux,
-			RestartPolicy: containerinstance.OnFailure,
-			IPAddress: &containerinstance.IPAddress{
-				Type:         containerinstance.Public,
-				DNSNameLabel: &dnsLabel,
-				Ports:        &containerPorts,
-			},
-		},
-		Location: &containerLocation,
-		Name:     &containerGroupName,
-	}
-
-	// Authenticate with Azure
-	authorizer, sid := AzureAuth()
-
-	log.Println("after authiorise")
-
-	// Get container service client and create container group
-	client := containerinstance.NewContainerGroupsClient(sid)
-	client.Authorizer = authorizer
-
-	log.Println("before deploy")
-
-	deploymentFuture, err := client.CreateOrUpdate(ctx, resourceGroupName, containerGroupName, cgroup)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-	log.Println("after deploy")
-
-	err = deploymentFuture.Future.WaitForCompletion(ctx, client.BaseClient.Client)
-	log.Println("after deploy wait")
-
-	if err != nil {
-		log.Printf(err.Error())
-	}
-
-	log.Printf("Deployment completed...")
-
-	deployedGroup, err := deploymentFuture.Result(client)
-
-	log.Println(*deployedGroup.IPAddress.Fqdn)
-
-	return
-}
-
 // DeployContainer2 Deploys a container to ACI
-func DeployContainer2(containerLocation string, resourceGroupName string, containerGroupName string, containersSpec []ContainerSpec, containerGroupSpec ContainerGroupSpec) (err error) {
+func DeployContainer2(containerLocation string, resourceGroupName string, containerGroupName string, containersSpec []ContainerSpec, containerGroupSpec ContainerGroupSpec) (deployedGroup containerinstance.ContainerGroup, err error) {
 
 	log.Println("Start of DeployContainer2")
 
@@ -256,10 +170,8 @@ func DeployContainer2(containerLocation string, resourceGroupName string, contai
 
 	log.Printf("Deployment completed...")
 
-	deployedGroup, err := deploymentFuture.Result(client)
+	deployedGroup, err = deploymentFuture.Result(client)
 	PrintError(err)
-
-	log.Println(*deployedGroup.IPAddress.Fqdn)
 
 	return
 }

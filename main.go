@@ -8,21 +8,24 @@ import (
 )
 
 func main() {
+	runWordPress()
+}
 
+func runWordPress() {
 	// Define containers to run
 	containerSpecs := []helpers.ContainerSpec{
 		helpers.ContainerSpec{
 			ContainerName:  "wordpress",
 			ContainerImage: "wordpress",
 			Ports:          []int32{80},
-			Cpu:            0.5,
+			CPU:            0.5,
 			MemoryInGB:     0.5,
 		},
 		helpers.ContainerSpec{
 			ContainerName:  "mysql",
 			ContainerImage: "mysql",
 			Ports:          []int32{3306},
-			Cpu:            0.5,
+			CPU:            0.5,
 			MemoryInGB:     0.5,
 			EnvironmentVariables: map[string]string{
 				"MYSQL_ROOT_PASSWORD": "0rsmP@ssw0rd",
@@ -40,9 +43,9 @@ func main() {
 		IPAddressType:     containerinstance.Public,
 	}
 
-	err := helpers.DeployContainer2("East US", "aci-example", "wordpress-app", containerSpecs, containerGroupSpecs)
+	deployedGroup, err := helpers.DeployContainer2("East US", "aci-example", "wordpress-app", containerSpecs, containerGroupSpecs)
+	log.Printf(*deployedGroup.IPAddress.Fqdn)
 	if err != nil {
 		log.Printf(err.Error())
 	}
-
 }

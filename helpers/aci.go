@@ -22,7 +22,7 @@ func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinsta
 		Image: &containerSpec.ContainerImage,
 		Ports: setTCPPort(containerSpec.Ports),
 		Resources: &containerinstance.ResourceRequirements{
-			Requests: setResourceRequests(containerSpec.Cpu, containerSpec.MemoryInGB),
+			Requests: setResourceRequests(containerSpec.CPU, containerSpec.MemoryInGB),
 		},
 		EnvironmentVariables: &envVars,
 	}
@@ -109,9 +109,10 @@ type ContainerSpec struct {
 	ContainerName        string
 	Ports                []int32
 	ContainerImage       string
-	Cpu                  float64
+	CPU                  float64
 	MemoryInGB           float64
 	EnvironmentVariables map[string]string
+	VolumeMount          AzureFileMount
 }
 
 // ContainerGroupSpec defines the details of the container to launch
@@ -123,4 +124,11 @@ type ContainerGroupSpec struct {
 	OsType            containerinstance.OperatingSystemTypes
 	RestartPolicy     containerinstance.ContainerGroupRestartPolicy
 	IPAddressType     containerinstance.ContainerGroupIPAddressType
+}
+
+// AzureFileMount describes the Azure File Mount for a container
+type AzureFileMount struct {
+	ShareName          string
+	StorageAccountKey  string
+	StorageAccountName string
 }
