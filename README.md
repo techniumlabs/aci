@@ -53,3 +53,31 @@ The app deploys a wordpress app
 go run main.go
 ```
 
+You should get output similar to:
+
+```
+2018/11/16 14:52:22 AZURE_TENANT_ID variable was found. OK.
+2018/11/16 14:52:22 AZURE_CLIENT_ID variable was found. OK.
+2018/11/16 14:52:22 AZURE_CLIENT_SECRET variable was found. OK.
+2018/11/16 14:52:22 AZURE_SUBSCRIPTION_ID variable was found. OK.
+2018/11/16 14:52:22 Starting azure auth...
+2018/11/16 14:52:22 After azure auth...
+2018/11/16 14:52:24 Starting GetContainerGroupFromSpec...
+2018/11/16 14:52:24 Starting setTCPPort...
+2018/11/16 14:52:24 Starting setTCPPort...
+2018/11/16 14:52:24 Created containerGroupProperties
+2018/11/16 14:52:24 Created containnerGroup
+2018/11/16 14:52:24 AZURE_TENANT_ID variable was found. OK.
+2018/11/16 14:52:24 AZURE_CLIENT_ID variable was found. OK.
+2018/11/16 14:52:24 AZURE_CLIENT_SECRET variable was found. OK.
+2018/11/16 14:52:24 AZURE_SUBSCRIPTION_ID variable was found. OK.
+2018/11/16 14:52:24 Starting azure auth...
+2018/11/16 14:52:24 After azure auth...
+2018/11/16 14:53:33 Deployment completed...
+2018/11/16 14:53:34 hiberapp.eastus.azurecontainer.io
+
+```
+The last line of the output is the URL to your wordpress app:
+
+
+![wordpress](./images/wordpress.png)
