@@ -6,17 +6,49 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 )
 
+// ContainerSpec defines the details of the container to launch
+type ContainerSpec struct {
+	ContainerName        string
+	Ports                []int32
+	ContainerImage       string
+	CPU                  float64
+	MemoryInGB           float64
+	EnvironmentVariables map[string]string
+	VolumeMount          AzureFileMount
+}
+
+// ContainerGroupSpec defines the details of the container to launch
+type ContainerGroupSpec struct {
+	ResourceGroupName string
+	Name              string
+	Ports             []int32
+	DNSNameLabel      string
+	OsType            containerinstance.OperatingSystemTypes
+	RestartPolicy     containerinstance.ContainerGroupRestartPolicy
+	IPAddressType     containerinstance.ContainerGroupIPAddressType
+}
+
+// AzureFileMount describes the Azure File Mount for a container
+type AzureFileMount struct {
+	ShareName          string
+	StorageAccountKey  string
+	StorageAccountName string
+}
+
 // GetContainerFromSpec returns a container struct with provided config
 func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinstance.Container) {
 
 	// Define Env Variables
 	var envVars []containerinstance.EnvironmentVariable
 	for key, value := range containerSpec.EnvironmentVariables {
+		k := key
+		v := value
 		envVars = append(envVars, containerinstance.EnvironmentVariable{
-			Name:  &key,
-			Value: &value,
+			Name:  &k,
+			Value: &v,
 		})
 	}
+
 	// Define container's properties
 	containerProperties := containerinstance.ContainerProperties{
 		Image: &containerSpec.ContainerImage,
@@ -69,8 +101,8 @@ func setTCPPort(ports []int32) (containerPorts *[]containerinstance.ContainerPor
 	log.Println("Starting setTCPPort...")
 	var portList []containerinstance.ContainerPort
 
-	for i, port := range ports {
-		log.Printf("%d, %d", i, port)
+	for _, port := range ports {
+		//log.Printf("%d, %d", i, port)
 		portList = append(portList, containerinstance.ContainerPort{
 			Port:     &port,
 			Protocol: "tcp",
@@ -84,8 +116,8 @@ func setContainerGroupTCPPort(ports []int32) (containerPorts *[]containerinstanc
 
 	var portList []containerinstance.Port
 
-	for i, port := range ports {
-		log.Printf("%d, %d", i, port)
+	for _, port := range ports {
+		//log.Printf("%d, %d", i, port)
 		portList = append(portList, containerinstance.Port{
 			Port:     &port,
 			Protocol: "tcp",
@@ -104,31 +136,38 @@ func setResourceRequests(cpu float64, memoryInGB float64) (resourceRequirements 
 	return &requirements
 }
 
-// ContainerSpec defines the details of the container to launch
-type ContainerSpec struct {
-	ContainerName        string
-	Ports                []int32
-	ContainerImage       string
-	CPU                  float64
-	MemoryInGB           float64
-	EnvironmentVariables map[string]string
-	VolumeMount          AzureFileMount
-}
+// DeployContainer Deploys a container to ACI
+func DeployContainer(containerLocation string, resourceGroupName string, containerGroupName string, containersSpec []ContainerSpec, containerGroupSpec ContainerGroupSpec) (deployedGroup containerinstance.ContainerGroup, err error) {
 
-// ContainerGroupSpec defines the details of the container to launch
-type ContainerGroupSpec struct {
-	ResourceGroupName string
-	Name              string
-	Ports             []int32
-	DNSNameLabel      string
-	OsType            containerinstance.OperatingSystemTypes
-	RestartPolicy     containerinstance.ContainerGroupRestartPolicy
-	IPAddressType     containerinstance.ContainerGroupIPAddressType
-}
+	// Define container group
+	containerGroupProperties := GetContainerGroupFromSpec(containerGroupSpec, containersSpec)
+	log.Println("Created containerGroupProperties")
 
-// AzureFileMount describes the Azure File Mount for a container
-type AzureFileMount struct {
-	ShareName          string
-	StorageAccountKey  string
-	StorageAccountName string
+	cgroup := containerinstance.ContainerGroup{
+		ContainerGroupProperties: containerGroupProperties,
+		Location:                 &containerLocation,
+		Name:                     &containerGroupName,
+	}
+
+	log.Println("Created containnerGroup")
+
+	// Authenticate with Azure
+	authorizer, sid := AzureAuth()
+
+	// Get container service client and create container group
+	client := containerinstance.NewContainerGroupsClient(sid)
+	client.Authorizer = authorizer
+
+	deploymentFuture, err := client.CreateOrUpdate(ctx, resourceGroupName, containerGroupName, cgroup)
+	PrintError(err)
+
+	err = deploymentFuture.Future.WaitForCompletion(ctx, client.BaseClient.Client)
+	PrintError(err)
+
+	log.Printf("Deployment completed...")
+
+	deployedGroup, err = deploymentFuture.Result(client)
+	PrintError(err)
+
+	return
 }

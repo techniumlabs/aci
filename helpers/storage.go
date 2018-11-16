@@ -6,7 +6,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-07-01/storage"
 )
 
-func CreateStorage() {
+// CreateStorageAccount Creates an Azure storage account
+func CreateStorageAccount(resourceGroupName string, storageAccountName string) {
 	// Authenticate with Azure
 	authorizer, sid := AzureAuth()
 
@@ -21,7 +22,7 @@ func CreateStorage() {
 		Tier: storage.Standard,
 	}
 	kind := storage.StorageV2
-	accountCreateFuture, err := client.Create(ctx, "aci-example", "storagetestbee", storage.AccountCreateParameters{
+	accountCreateFuture, err := client.Create(ctx, resourceGroupName, storageAccountName, storage.AccountCreateParameters{
 		Location: &location,
 		Kind:     kind,
 		Sku:      &sku,
