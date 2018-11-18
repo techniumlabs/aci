@@ -1,9 +1,9 @@
 package main
 
-import "github.com/writeameer/aci/helpers"
+import "github.com/writeameer/aci/apps"
 
 func main() {
 
-	helpers.RunWordPress("aci-example", "wordpress-app")
+	apps.RunWordPress("aci-example", "wordpress-app")
 
 }

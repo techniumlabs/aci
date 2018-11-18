@@ -1,16 +1,11 @@
 package helpers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
 	"os"
-)
-
-var (
-	ctx = context.Background()
 )
 
 // CheckEnv Check the Azure creds are set in the environment variables

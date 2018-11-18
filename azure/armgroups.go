@@ -1,7 +1,8 @@
-package helpers
+package azure
 
 import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/writeameer/aci/helpers"
 )
 
 // CreateARMGroup creates an Azure Resource Manager Group
@@ -16,7 +17,7 @@ func CreateARMGroup(groupName string, location string) (group resources.Group, e
 			Location: &location,
 		},
 	)
-	PrintError(err)
+	helpers.PrintError(err)
 
 	return
 }
@@ -33,7 +34,7 @@ func GetGroup(resourceGroupName string) (group resources.Group, err error) {
 
 func initGroupsClient() (client resources.GroupsClient) {
 	// Authenticate with Azure
-	authorizer, sid := AzureAuth()
+	authorizer, sid := Auth()
 
 	// Setup ARM Client
 	client = resources.NewGroupsClient(sid)

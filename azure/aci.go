@@ -1,9 +1,10 @@
-package helpers
+package azure
 
 import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
+	"github.com/writeameer/aci/helpers"
 )
 
 // ContainerSpec defines the details of the container to launch
@@ -14,7 +15,7 @@ type ContainerSpec struct {
 	CPU                  float64
 	MemoryInGB           float64
 	EnvironmentVariables map[string]string
-	VolumeMount          AzureFileMount
+	//VolumeMount          AzureFileMount
 }
 
 // ContainerGroupSpec defines the details of the container to launch
@@ -29,11 +30,11 @@ type ContainerGroupSpec struct {
 }
 
 // AzureFileMount describes the Azure File Mount for a container
-type AzureFileMount struct {
-	ShareName          string
-	StorageAccountKey  string
-	StorageAccountName string
-}
+// type AzureFileMount struct {
+// 	ShareName          string
+// 	StorageAccountKey  string
+// 	StorageAccountName string
+// }
 
 // GetContainerFromSpec returns a container struct with provided config
 func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinstance.Container) {
@@ -152,22 +153,22 @@ func DeployContainer(containerLocation string, resourceGroupName string, contain
 	log.Println("Created containnerGroup")
 
 	// Authenticate with Azure
-	authorizer, sid := AzureAuth()
+	authorizer, sid := Auth()
 
 	// Get container service client and create container group
 	client := containerinstance.NewContainerGroupsClient(sid)
 	client.Authorizer = authorizer
 
 	deploymentFuture, err := client.CreateOrUpdate(ctx, resourceGroupName, containerGroupName, cgroup)
-	PrintError(err)
+	helpers.PrintError(err)
 
 	err = deploymentFuture.Future.WaitForCompletion(ctx, client.BaseClient.Client)
-	PrintError(err)
+	helpers.PrintError(err)
 
 	log.Printf("Deployment completed...")
 
 	deployedGroup, err = deploymentFuture.Result(client)
-	PrintError(err)
+	helpers.PrintError(err)
 
 	return
 }

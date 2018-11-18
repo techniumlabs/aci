@@ -1,16 +1,17 @@
-package helpers
+package azure
 
 import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/writeameer/aci/helpers"
 )
 
 // DeployArmTemplate Deploys and ARM template
 func DeployArmTemplate(groupName string, location string, deploymentName string, template *map[string]interface{}, paramaters *map[string]interface{}) (deployment resources.DeploymentExtended, err error) {
 
 	// Authenticate with Azure
-	authorizer, sid := AzureAuth()
+	authorizer, sid := Auth()
 
 	// Setup ARM Client
 	armClient := resources.NewGroupsClient(sid)
@@ -21,7 +22,7 @@ func DeployArmTemplate(groupName string, location string, deploymentName string,
 		Location: &location,
 	}
 	group, err := armClient.CreateOrUpdate(ctx, groupName, params)
-	PrintError(err)
+	helpers.PrintError(err)
 	log.Printf("%v arm group created", *group.Name)
 
 	// Create deployment client
@@ -42,7 +43,7 @@ func DeployArmTemplate(groupName string, location string, deploymentName string,
 		},
 	)
 
-	PrintError(err)
+	helpers.PrintError(err)
 
 	// Wait for completion
 	log.Printf("Wait for completion...")

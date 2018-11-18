@@ -1,15 +1,16 @@
-package helpers
+package azure
 
 import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-07-01/storage"
+	"github.com/writeameer/aci/helpers"
 )
 
 // CreateStorageAccount Creates an Azure storage account
 func CreateStorageAccount(resourceGroupName string, storageAccountName string) {
 	// Authenticate with Azure
-	authorizer, sid := AzureAuth()
+	authorizer, sid := Auth()
 
 	// Setup ARM Client
 
@@ -28,10 +29,10 @@ func CreateStorageAccount(resourceGroupName string, storageAccountName string) {
 		Sku:      &sku,
 	})
 
-	PrintError(err)
+	helpers.PrintError(err)
 
 	err = accountCreateFuture.WaitForCompletion(ctx, client.BaseClient.Client)
-	PrintError(err)
+	helpers.PrintError(err)
 
 	account, err := accountCreateFuture.Result(client)
 

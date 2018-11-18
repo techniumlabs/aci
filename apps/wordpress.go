@@ -1,9 +1,11 @@
-package helpers
+package apps
 
 import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
+	"github.com/writeameer/aci/azure"
+	"github.com/writeameer/aci/helpers"
 )
 
 // RunWordPress Runs wordpress on ACI
@@ -17,8 +19,8 @@ func RunWordPress(resourceGroupName string, containerGroupName string) {
 	mysqlImage := "mysql:5.6"
 
 	// Define containers to run
-	containerSpecs := []ContainerSpec{
-		ContainerSpec{
+	containerSpecs := []azure.ContainerSpec{
+		azure.ContainerSpec{
 			ContainerName:  "wordpress",
 			ContainerImage: wordpressImage,
 			Ports:          []int32{80},
@@ -29,7 +31,7 @@ func RunWordPress(resourceGroupName string, containerGroupName string) {
 				"WORDPRESS_DB_PASSWORD": "0rsmP@ssw0rd",
 			},
 		},
-		ContainerSpec{
+		azure.ContainerSpec{
 			ContainerName:  "mysql",
 			ContainerImage: mysqlImage,
 			Ports:          []int32{3306},
@@ -42,7 +44,7 @@ func RunWordPress(resourceGroupName string, containerGroupName string) {
 	}
 
 	// Define the container group's specifications
-	containerGroupSpecs := ContainerGroupSpec{
+	containerGroupSpecs := azure.ContainerGroupSpec{
 		ResourceGroupName: resourceGroupName,
 		Name:              containerGroupName,
 		Ports:             []int32{80},
@@ -52,10 +54,10 @@ func RunWordPress(resourceGroupName string, containerGroupName string) {
 	}
 
 	// Get ARM group to inspect location
-	armGroup, err := GetGroup(resourceGroupName)
-	PrintError(err)
+	armGroup, err := azure.GetGroup(resourceGroupName)
+	helpers.PrintError(err)
 
-	deployedGroup, err := DeployContainer(*armGroup.Location, resourceGroupName, containerGroupName, containerSpecs, containerGroupSpecs)
+	deployedGroup, err := azure.DeployContainer(*armGroup.Location, resourceGroupName, containerGroupName, containerSpecs, containerGroupSpecs)
 	log.Printf(*deployedGroup.IPAddress.Fqdn)
-	PrintError(err)
+	helpers.PrintError(err)
 }
