@@ -4,14 +4,23 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/writeameer/aci/apps"
+	azure "github.com/writeameer/aci/azure"
 	handlers "github.com/writeameer/httphandlers/handlers"
 )
 
 func main() {
 
-	apps.RunMoodle("aci-example", "moodle4-app")
-	apps.RunWordPress("aci-example", "moodle4-app")
+	storageAccountName := "moodlesharebmggehql"
+
+	resourceGroupName := "aci-example"
+
+	key, _ := azure.CreateAzureFileShare(resourceGroupName, storageAccountName, "moodle-share")
+
+	log.Println(key)
+	// azure.CreateStorageAccount(resourceGroupName, "")
+
+	// apps.RunMoodle(resourceGroupName, "moodle4-app")
+	// apps.RunWordPress(resourceGroupName, "wordpress-app")
 	//doReverseProxy("hiberapp.eastus.azurecontainer.io")
 }
 
