@@ -8,37 +8,37 @@ import (
 	"github.com/writeameer/aci/helpers"
 )
 
-// RunWordPress Runs wordpress on ACI
-func RunWordPress(resourceGroupName string, containerGroupName string) {
+// RunMoodle Runs wordpress on ACI
+func RunMoodle(resourceGroupName string, containerGroupName string) {
 
 	//	wp_config_extra := "\n\tdefine('WP_HOME', 'http://localhost:8000/');\n\tdefine('WP_SITEURL', 'http://localhost:8000/');\n"
-
-	// Define Images
-	wordpressImage := "wordpress:4.9-apache"
-	mysqlImage := "mysql:5.6"
 
 	// Define containers to run
 	containerSpecs := []azure.ContainerSpec{
 		azure.ContainerSpec{
-			ContainerName:  "wordpress",
-			ContainerImage: wordpressImage,
+			ContainerName:  "moodle",
+			ContainerImage: "bitnami/moodle:latest",
 			Ports:          []int32{80},
 			CPU:            0.5,
 			MemoryInGB:     0.5,
 			EnvironmentVariables: map[string]string{
-				"WORDPRESS_DB_HOST":     "127.0.0.1:3306",
-				"WORDPRESS_DB_PASSWORD": "0rsmP@ssw0rd",
-				//"WORDPRESS_CONFIG_EXTRA": wp_config_extra,
+				"MARIADB_HOST":         "127.0.0.1",
+				"MARIADB_PORT_NUMBER":  "3306",
+				"MOODLE_DATABASE_USER": "bn_moodle",
+				"MOODLE_DATABASE_NAME": "bitnami_moodle",
+				"ALLOW_EMPTY_PASSWORD": "yes",
 			},
 		},
 		azure.ContainerSpec{
-			ContainerName:  "mysql",
-			ContainerImage: mysqlImage,
+			ContainerName:  "mariahdb",
+			ContainerImage: "bitnami/mariadb:latest",
 			Ports:          []int32{3306},
 			CPU:            0.5,
 			MemoryInGB:     0.5,
 			EnvironmentVariables: map[string]string{
-				"MYSQL_ROOT_PASSWORD": "0rsmP@ssw0rd",
+				"MARIADB_USER":         "bn_moodle",
+				"MARIADB_DATABASE":     "bitnami_moodle",
+				"ALLOW_EMPTY_PASSWORD": "yes",
 			},
 		},
 	}
