@@ -10,7 +10,8 @@ import (
 
 func main() {
 
-	apps.RunMoodle("aci-example", "moodle-app")
+	apps.RunMoodle("aci-example", "moodle4-app")
+	apps.RunWordPress("aci-example", "moodle4-app")
 	//doReverseProxy("hiberapp.eastus.azurecontainer.io")
 }
 

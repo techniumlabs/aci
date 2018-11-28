@@ -9,7 +9,7 @@ import (
 )
 
 // RunMoodle Runs wordpress on ACI
-func RunMoodle(resourceGroupName string, containerGroupName string) {
+func RunMoodle(resourceGroupName string, containerGroupName string) (err error) {
 
 	//	wp_config_extra := "\n\tdefine('WP_HOME', 'http://localhost:8000/');\n\tdefine('WP_SITEURL', 'http://localhost:8000/');\n"
 
@@ -60,4 +60,6 @@ func RunMoodle(resourceGroupName string, containerGroupName string) {
 	deployedGroup, err := azure.DeployContainer(*armGroup.Location, resourceGroupName, containerGroupName, containerSpecs, containerGroupSpecs)
 	log.Printf(*deployedGroup.IPAddress.Fqdn)
 	helpers.PrintError(err)
+
+	return
 }
