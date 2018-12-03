@@ -9,11 +9,31 @@ import (
 )
 
 // RunMoodle Runs wordpress on ACI
-func RunMoodle(resourceGroupName string, containerGroupName string) (err error) {
+func RunMoodle(resourceGroupName string, containerGroupName string, storageAccountName string, mysqlShareName string, webShareName string) (err error) {
+
+	// Create a storage account if not exists
+	azure.CreateStorageAccount(resourceGroupName, storageAccountName)
+
+	// Creat file share if not exists
+	key, err := azure.CreateAzureFileShare(resourceGroupName, storageAccountName, mysqlShareName)
+	if err != nil {
+		return
+	}
+
+	key, err = azure.CreateAzureFileShare(resourceGroupName, storageAccountName, webShareName)
+	if err != nil {
+		return
+	}
+	log.Println("After fileshare creation")
+	log.Println("The key was:" + key)
 
 	//	wp_config_extra := "\n\tdefine('WP_HOME', 'http://localhost:8000/');\n\tdefine('WP_SITEURL', 'http://localhost:8000/');\n"
 
 	// Define containers to run
+	readonly := false
+	mountPath1 := "/bitnami"
+	mountPath2 := "/bitnami/mariadb"
+
 	containerSpecs := []azure.ContainerSpec{
 		azure.ContainerSpec{
 			ContainerName:  "moodle",
@@ -28,6 +48,13 @@ func RunMoodle(resourceGroupName string, containerGroupName string) (err error) 
 				"MOODLE_DATABASE_NAME": "bitnami_moodle",
 				"ALLOW_EMPTY_PASSWORD": "yes",
 			},
+			VolumeMounts: &[]containerinstance.VolumeMount{
+				containerinstance.VolumeMount{
+					Name:      &webShareName,
+					MountPath: &mountPath1,
+					ReadOnly:  &readonly,
+				},
+			},
 		},
 		azure.ContainerSpec{
 			ContainerName:  "mariahdb",
@@ -40,6 +67,13 @@ func RunMoodle(resourceGroupName string, containerGroupName string) (err error) 
 				"MARIADB_DATABASE":     "bitnami_moodle",
 				"ALLOW_EMPTY_PASSWORD": "yes",
 			},
+			VolumeMounts: &[]containerinstance.VolumeMount{
+				containerinstance.VolumeMount{
+					Name:      &mysqlShareName,
+					MountPath: &mountPath2,
+					ReadOnly:  &readonly,
+				},
+			},
 		},
 	}
 
@@ -51,6 +85,24 @@ func RunMoodle(resourceGroupName string, containerGroupName string) (err error) 
 		DNSNameLabel:      "hiberapp",
 		OsType:            containerinstance.Linux,
 		IPAddressType:     containerinstance.Public,
+		Volumes: &[]containerinstance.Volume{
+			containerinstance.Volume{
+				Name: &webShareName,
+				AzureFile: &containerinstance.AzureFileVolume{
+					ShareName:          &webShareName,
+					StorageAccountKey:  &key,
+					StorageAccountName: &storageAccountName,
+				},
+			},
+			containerinstance.Volume{
+				Name: &mysqlShareName,
+				AzureFile: &containerinstance.AzureFileVolume{
+					ShareName:          &mysqlShareName,
+					StorageAccountKey:  &key,
+					StorageAccountName: &storageAccountName,
+				},
+			},
+		},
 	}
 
 	// Get ARM group to inspect location

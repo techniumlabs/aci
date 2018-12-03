@@ -15,10 +15,10 @@ type ContainerSpec struct {
 	CPU                  float64
 	MemoryInGB           float64
 	EnvironmentVariables map[string]string
-	//VolumeMount          AzureFileMount
+	VolumeMounts         *[]containerinstance.VolumeMount
 }
 
-// ContainerGroupSpec defines the details of the container to launch
+// ContainerGroupSpec defines the details of the container group to launch
 type ContainerGroupSpec struct {
 	ResourceGroupName string
 	Name              string
@@ -27,14 +27,15 @@ type ContainerGroupSpec struct {
 	OsType            containerinstance.OperatingSystemTypes
 	RestartPolicy     containerinstance.ContainerGroupRestartPolicy
 	IPAddressType     containerinstance.ContainerGroupIPAddressType
+	Volumes           *[]containerinstance.Volume
 }
 
-// AzureFileMount describes the Azure File Mount for a container
-// type AzureFileMount struct {
-// 	ShareName          string
-// 	StorageAccountKey  string
-// 	StorageAccountName string
-// }
+//FileMount describes the Azure File Mount for a container
+type FileMount struct {
+	ShareName          string
+	StorageAccountKey  string
+	StorageAccountName string
+}
 
 // GetContainerFromSpec returns a container struct with provided config
 func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinstance.Container) {
@@ -50,6 +51,9 @@ func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinsta
 		})
 	}
 
+	//volumeMounts := []containerinstance.VolumeMount{}
+	//azureFileMount := &containerinstance.AzureFileVolume{}
+
 	// Define container's properties
 	containerProperties := containerinstance.ContainerProperties{
 		Image: &containerSpec.ContainerImage,
@@ -58,6 +62,7 @@ func GetContainerFromSpec(containerSpec ContainerSpec) (container containerinsta
 			Requests: setResourceRequests(containerSpec.CPU, containerSpec.MemoryInGB),
 		},
 		EnvironmentVariables: &envVars,
+		VolumeMounts:         containerSpec.VolumeMounts,
 	}
 
 	// Define a container with given properties
@@ -93,6 +98,7 @@ func GetContainerGroupFromSpec(containerGroupSpec ContainerGroupSpec, containerS
 			DNSNameLabel: &containerGroupSpec.DNSNameLabel,
 			Ports:        setContainerGroupTCPPort(containerGroupSpec.Ports),
 		},
+		Volumes: containerGroupSpec.Volumes,
 	}
 
 	return &cgroup

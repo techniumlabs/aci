@@ -41,7 +41,7 @@ func CreateStorageAccount(resourceGroupName string, storageAccountName string) (
 	helpers.PrintError(err)
 
 	account, err = accountCreateFuture.Result(client)
-	result, _ := client.ListKeys(ctx, resourceGroupName, storageAccountName)
+	result, err := client.ListKeys(ctx, resourceGroupName, storageAccountName)
 	keys = result.Keys
 
 	return
@@ -59,14 +59,21 @@ func CreateAzureFileShare(resourceGroupName string, storageAccountName string, s
 	urlString := fmt.Sprintf("https://%s.file.core.windows.net/%v", *storageAccount.Name, shareName)
 	u, _ := url.Parse(urlString)
 
-	// Create new share
+	// Create new share, return if no err
 	credential, err := azfile.NewSharedKeyCredential(storageAccountName, key)
 	shareURL := azfile.NewShareURL(*u, azfile.NewPipeline(credential, azfile.PipelineOptions{}))
+	log.Printf("Start creating share: %s", shareName)
 	_, err = shareURL.Create(ctx, azfile.Metadata{"createdby": "HiberApp"}, 0)
+	log.Printf("End creating share: %s", shareName)
+	if err == nil {
+		return
+	}
 
+	// If err was share already exists - clearr err
 	if strings.Contains(err.Error(), "The specified share already exists") {
 		log.Printf("The share %v already exists", shareURL.String())
 		err = nil
 	}
+
 	return
 }
